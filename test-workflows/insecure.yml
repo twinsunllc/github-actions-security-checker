@@ -1,0 +1,9 @@
+name: Insecure Workflow
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # Not pinned to hash
+      - uses: unverified-publisher/action@v1  # Unverified publisher
+      - uses: aws-action/configure-credentials@v1  # Typo in action name
