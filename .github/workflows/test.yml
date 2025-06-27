@@ -99,21 +99,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
       
-      - name: Create test workflow with mixed actions
+      - name: Copy test workflow with mixed actions
         run: |
           mkdir -p .github/workflows
-          cat > .github/workflows/test-mixed.yml << 'EOF'
-          name: Mixed Actions Test
-          on: [push]
-          jobs:
-            test:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: actions/checkout@v4
-                - uses: docker/build-push-action@v5
-                - uses: suspicious/action@v1
-                - uses: hashicorp/setup-terraform@v3
-          EOF
+          cp test-workflows/test-mixed.yml .github/workflows/
       
       - name: Run Security Audit with Comma-Separated Whitelist
         id: audit
@@ -150,20 +139,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
       
-      - name: Create test workflow
+      - name: Copy test workflow for multiline test
         run: |
           mkdir -p .github/workflows
-          cat > .github/workflows/test-multiline.yml << 'EOF'
-          name: Multiline Test
-          on: [push]
-          jobs:
-            test:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: actions/checkout@v4
-                - uses: azure/login@v1
-                - uses: untrusted/action@v1
-          EOF
+          cp test-workflows/test-multiline.yml .github/workflows/
       
       - name: Run Security Audit with Multiline Whitelist
         id: audit
@@ -198,19 +177,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
       
-      - name: Create test workflow
+      - name: Copy test workflow for precedence test
         run: |
           mkdir -p .github/workflows
-          cat > .github/workflows/test-precedence.yml << 'EOF'
-          name: Precedence Test
-          on: [push]
-          jobs:
-            test:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: actions/checkout@v4
-                - uses: conflicted/action@v1
-          EOF
+          cp test-workflows/test-precedence.yml .github/workflows/
       
       - name: Run Security Audit with Conflicted Rules
         id: audit
@@ -241,20 +211,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
       
-      - name: Create test workflow
+      - name: Copy test workflow for blacklist only test
         run: |
           mkdir -p .github/workflows
-          cat > .github/workflows/test-blacklist-only.yml << 'EOF'
-          name: Blacklist Only Test
-          on: [push]
-          jobs:
-            test:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: actions/checkout@v4
-                - uses: random/action@v1
-                - uses: blocked/action@v1
-          EOF
+          cp test-workflows/test-blacklist-only.yml .github/workflows/
       
       - name: Run Security Audit with Blacklist Only
         id: audit
