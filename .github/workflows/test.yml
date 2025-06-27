@@ -119,13 +119,13 @@ jobs:
           cat action-security-report.md
           
           # Check that suspicious/action was blocked
-          if ! grep -q "suspicious/action.*Blocked by whitelist/blacklist rules" action-security-report.md; then
+          if ! grep -A10 "suspicious/action" action-security-report.md | grep -q "Blocked by whitelist/blacklist rules"; then
             echo "❌ Expected suspicious/action to be blocked by blacklist"
             exit 1
           fi
           
           # Check that allowed actions passed whitelist check
-          if ! grep -q "actions/checkout.*Allowed by Rules.*✅" action-security-report.md; then
+          if ! grep -A10 "actions/checkout" action-security-report.md | grep -q "Allowed by Rules.*✅"; then
             echo "❌ Expected actions/checkout to be allowed by whitelist"
             exit 1
           fi
@@ -163,7 +163,7 @@ jobs:
           cat action-security-report.md
           
           # Verify azure/login is allowed but untrusted/action is blocked
-          if ! grep -q "untrusted/action.*Blocked by whitelist/blacklist rules" action-security-report.md; then
+          if ! grep -A10 "untrusted/action" action-security-report.md | grep -q "Blocked by whitelist/blacklist rules"; then
             echo "❌ Expected untrusted/action to be blocked"
             exit 1
           fi
@@ -197,7 +197,7 @@ jobs:
           cat action-security-report.md
           
           # Verify that blacklist takes precedence over whitelist
-          if ! grep -q "conflicted/action.*Blocked by whitelist/blacklist rules" action-security-report.md; then
+          if ! grep -A10 "conflicted/action" action-security-report.md | grep -q "Blocked by whitelist/blacklist rules"; then
             echo "❌ Expected conflicted/action to be blocked (blacklist should take precedence)"
             exit 1
           fi
@@ -230,13 +230,13 @@ jobs:
           cat action-security-report.md
           
           # Verify blocked/action is blocked
-          if ! grep -q "blocked/action.*Blocked by whitelist/blacklist rules" action-security-report.md; then
+          if ! grep -A10 "blocked/action" action-security-report.md | grep -q "Blocked by whitelist/blacklist rules"; then
             echo "❌ Expected blocked/action to be blocked"
             exit 1
           fi
           
           # Verify random/action is allowed (no whitelist means allow all non-blacklisted)
-          if ! grep -q "random/action.*Allowed by Rules.*✅" action-security-report.md; then
+          if ! grep -A10 "random/action" action-security-report.md | grep -q "Allowed by Rules.*✅"; then
             echo "❌ Expected random/action to be allowed when no whitelist is specified"
             exit 1
           fi
