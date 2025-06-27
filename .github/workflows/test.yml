@@ -250,16 +250,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
       
-      - name: Copy test workflow for allowlist test
+      - name: Create isolated test directory
         run: |
-          mkdir -p .github/workflows
-          cp test-workflows/allowlist-test.yml .github/workflows/
+          mkdir -p test-allowlist-workflows
+          cp test-workflows/allowlist-test.yml test-allowlist-workflows/
       
       - name: Run Security Audit with Allowlist
         id: audit
         uses: ./
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflows_dir: test-allowlist-workflows
           allowlist: "actions"
       
       - name: Verify Allowlist Bypass Logic
