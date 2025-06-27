@@ -9,6 +9,7 @@ A GitHub Action that audits your workflows for security best practices, ensuring
 
 - **Verified Publisher Check**: Ensures actions come from trusted, verified publishers
 - **Commit Hash Pinning**: Verifies actions are pinned to specific commit SHAs (not tags)
+- **Whitelist/Blacklist Support**: Control which actions and namespaces are allowed or blocked
 - **Typo Detection**: Catches common typos in action names that could lead to supply chain attacks
 - **Comprehensive Reporting**: Generates detailed Markdown reports with actionable recommendations
 - **CI/CD Integration**: Fails builds when security issues are detected
@@ -39,6 +40,8 @@ jobs:
 |-------|-------------|----------|---------|
 | `github_token` | GitHub token for API access | Yes | `${{ github.token }}` |
 | `workflows_dir` | Directory containing workflow files | No | `.github/workflows` |
+| `whitelist` | Array of allowed namespaces or repositories | No | `[]` |
+| `blacklist` | Array of blocked namespaces or repositories | No | `[]` |
 
 ## 📤 Outputs
 
@@ -75,6 +78,7 @@ Catches common typos that could be exploited:
 **Total actions audited:** 5
 **Verified publishers:** 3/5
 **Commit hash pinned:** 2/5
+**Allowed by whitelist/blacklist:** 4/5
 **Failed checks:** 3
 
 ## Detailed Results
@@ -85,6 +89,7 @@ Catches common typos that could be exploited:
 - **Version:** v1
 - **Verified Publisher:** ❌
 - **Pinned to Hash:** ❌
+- **Allowed by Rules:** ✅
 - **Issues:** Not from verified publisher, Not pinned to commit hash
 ```
 
@@ -96,6 +101,52 @@ Catches common typos that could be exploited:
 4. **Use Dependabot**: Enable Dependabot to automatically update action versions
 
 ## 🏗️ Advanced Usage
+
+### Whitelist/Blacklist Configuration
+
+Control which actions are allowed or blocked using whitelist and blacklist arrays. Multiple formats are supported:
+
+#### YAML Array Format (Recommended)
+```yaml
+- uses: twinsunllc/github-actions-security-checker@v1
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    whitelist:
+      - actions          # Allow all actions/* 
+      - docker          # Allow all docker/*
+      - hashicorp/setup-terraform  # Allow specific action
+    blacklist:
+      - suspicious      # Block all suspicious/*
+      - untrusted/repo  # Block specific action
+```
+
+#### Multiline String Format
+```yaml
+- uses: twinsunllc/github-actions-security-checker@v1
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    whitelist: |
+      actions
+      docker
+      hashicorp/setup-terraform
+    blacklist: |
+      suspicious
+      untrusted/repo
+```
+
+#### JSON Array Format
+```yaml
+- uses: twinsunllc/github-actions-security-checker@v1
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    whitelist: '["actions", "docker", "hashicorp/setup-terraform"]'
+    blacklist: '["suspicious", "untrusted/repo"]'
+```
+
+**Important Rules:**
+- **Blacklist takes precedence**: If an action is in both whitelist and blacklist, it will be blocked
+- **No whitelist = allow all**: If no whitelist is specified, all non-blacklisted actions are allowed
+- **Namespace vs specific**: `docker` blocks/allows all `docker/*` actions, while `docker/build-push-action` targets only that specific action
 
 ### Custom Workflows Directory
 

@@ -13,6 +13,14 @@ inputs:
     description: 'Directory containing workflow files to audit'
     required: false
     default: '.github/workflows'
+  whitelist:
+    description: 'Array of allowed namespaces or repositories. Supports YAML arrays, JSON arrays, or multiline strings.'
+    required: false
+    default: '[]'
+  blacklist:
+    description: 'Array of blocked namespaces or repositories. Supports YAML arrays, JSON arrays, or multiline strings. Blacklist takes precedence over whitelist.'
+    required: false
+    default: '[]'
 outputs:
   report:
     description: 'Security audit report in Markdown format'
@@ -52,3 +60,5 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         WORKFLOWS_DIR: ${{ inputs.workflows_dir }}
+        WHITELIST: ${{ inputs.whitelist }}
+        BLACKLIST: ${{ inputs.blacklist }}

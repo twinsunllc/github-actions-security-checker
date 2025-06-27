@@ -91,3 +91,202 @@ jobs:
             exit 1
           fi
           echo "✅ Custom directory test passed"
+
+  test-whitelist-yaml:
+    name: Test YAML Array Whitelist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      
+      - name: Create test workflow with mixed actions
+        run: |
+          mkdir -p .github/workflows
+          cat > .github/workflows/test-mixed.yml << 'EOF'
+          name: Mixed Actions Test
+          on: [push]
+          jobs:
+            test:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - uses: docker/build-push-action@v5
+                - uses: suspicious/action@v1
+                - uses: hashicorp/setup-terraform@v3
+          EOF
+      
+      - name: Run Security Audit with YAML Array Whitelist
+        id: audit
+        uses: ./
+        continue-on-error: true
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          whitelist:
+            - actions
+            - docker
+            - hashicorp/setup-terraform
+          blacklist:
+            - suspicious
+      
+      - name: Verify Whitelist Logic
+        run: |
+          echo "📋 Audit Report:"
+          cat action-security-report.md
+          
+          # Check that suspicious/action was blocked
+          if ! grep -q "suspicious/action.*Blocked by whitelist/blacklist rules" action-security-report.md; then
+            echo "❌ Expected suspicious/action to be blocked by blacklist"
+            exit 1
+          fi
+          
+          # Check that allowed actions passed whitelist check
+          if ! grep -q "actions/checkout.*Allowed by Rules.*✅" action-security-report.md; then
+            echo "❌ Expected actions/checkout to be allowed by whitelist"
+            exit 1
+          fi
+          
+          echo "✅ Whitelist/blacklist logic working correctly"
+
+  test-whitelist-multiline:
+    name: Test Multiline String Whitelist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      
+      - name: Create test workflow
+        run: |
+          mkdir -p .github/workflows
+          cat > .github/workflows/test-multiline.yml << 'EOF'
+          name: Multiline Test
+          on: [push]
+          jobs:
+            test:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - uses: azure/login@v1
+                - uses: untrusted/action@v1
+          EOF
+      
+      - name: Run Security Audit with Multiline Whitelist
+        id: audit
+        uses: ./
+        continue-on-error: true
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          whitelist: |
+            actions
+            azure
+          blacklist: |
+            untrusted
+            suspicious
+      
+      - name: Verify Multiline Format
+        run: |
+          echo "📋 Audit Report:"
+          cat action-security-report.md
+          
+          # Verify azure/login is allowed but untrusted/action is blocked
+          if ! grep -q "untrusted/action.*Blocked by whitelist/blacklist rules" action-security-report.md; then
+            echo "❌ Expected untrusted/action to be blocked"
+            exit 1
+          fi
+          
+          echo "✅ Multiline format working correctly"
+
+  test-blacklist-precedence:
+    name: Test Blacklist Precedence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      
+      - name: Create test workflow
+        run: |
+          mkdir -p .github/workflows
+          cat > .github/workflows/test-precedence.yml << 'EOF'
+          name: Precedence Test
+          on: [push]
+          jobs:
+            test:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - uses: conflicted/action@v1
+          EOF
+      
+      - name: Run Security Audit with Conflicted Rules
+        id: audit
+        uses: ./
+        continue-on-error: true
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          whitelist:
+            - actions
+            - conflicted
+          blacklist:
+            - conflicted
+      
+      - name: Verify Blacklist Precedence
+        run: |
+          echo "📋 Audit Report:"
+          cat action-security-report.md
+          
+          # Verify that blacklist takes precedence over whitelist
+          if ! grep -q "conflicted/action.*Blocked by whitelist/blacklist rules" action-security-report.md; then
+            echo "❌ Expected conflicted/action to be blocked (blacklist should take precedence)"
+            exit 1
+          fi
+          
+          echo "✅ Blacklist precedence working correctly"
+
+  test-no-whitelist:
+    name: Test Blacklist Only (No Whitelist)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      
+      - name: Create test workflow
+        run: |
+          mkdir -p .github/workflows
+          cat > .github/workflows/test-blacklist-only.yml << 'EOF'
+          name: Blacklist Only Test
+          on: [push]
+          jobs:
+            test:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - uses: random/action@v1
+                - uses: blocked/action@v1
+          EOF
+      
+      - name: Run Security Audit with Blacklist Only
+        id: audit
+        uses: ./
+        continue-on-error: true
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          blacklist:
+            - blocked
+      
+      - name: Verify Blacklist Only Logic
+        run: |
+          echo "📋 Audit Report:"
+          cat action-security-report.md
+          
+          # Verify blocked/action is blocked
+          if ! grep -q "blocked/action.*Blocked by whitelist/blacklist rules" action-security-report.md; then
+            echo "❌ Expected blocked/action to be blocked"
+            exit 1
+          fi
+          
+          # Verify random/action is allowed (no whitelist means allow all non-blacklisted)
+          if ! grep -q "random/action.*Allowed by Rules.*✅" action-security-report.md; then
+            echo "❌ Expected random/action to be allowed when no whitelist is specified"
+            exit 1
+          fi
+          
+          echo "✅ Blacklist-only logic working correctly"
