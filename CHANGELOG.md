@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-06-27
+
+### Changed
+- **Improved marketplace detection**: Updated verification logic to fetch repository pages first and extract actual marketplace links, providing more accurate detection regardless of action naming conventions
+- Example: `docker/setup-buildx-action` now correctly maps to `https://github.com/marketplace/actions/docker-setup-buildx`
+
+### Removed
+- **Removed typo detection**: Eliminated hardcoded typo checks (e.g., aws-action vs aws-actions) in favor of the more robust marketplace link discovery approach
+
+### Technical Details
+- Modified `check_verified_publisher()` to fetch repository pages and parse marketplace links using regex patterns
+- Supports both absolute and relative marketplace link formats
+- More reliable than previous URL guessing approach
+
 ## [1.1.2] - 2025-06-27
 
 ### Fixed
