@@ -242,3 +242,41 @@ jobs:
           fi
           
           echo "✅ Blacklist-only logic working correctly"
+
+  test-allowlist:
+    name: Test Allowlist (Bypass Security Checks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      
+      - name: Copy test workflow for allowlist test
+        run: |
+          mkdir -p .github/workflows
+          cp test-workflows/allowlist-test.yml .github/workflows/
+      
+      - name: Run Security Audit with Allowlist
+        id: audit
+        uses: ./
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          allowlist: "actions"
+      
+      - name: Verify Allowlist Bypass Logic
+        run: |
+          echo "📋 Audit Report:"
+          cat action-security-report.md
+          
+          # Verify actions/checkout shows "Trusted - bypassing security checks"
+          if ! grep -A10 "actions/checkout" action-security-report.md | grep -q "Trusted - bypassing security checks"; then
+            echo "❌ Expected actions/checkout to show 'Trusted - bypassing security checks'"
+            exit 1
+          fi
+          
+          # Verify non-allowlisted actions still get security checks
+          if ! grep -A10 "some-vendor/action" action-security-report.md | grep -q "Not from verified publisher"; then
+            echo "❌ Expected some-vendor/action to fail security checks"
+            exit 1
+          fi
+          
+          echo "✅ Allowlist bypass logic working correctly"

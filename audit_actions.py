@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Set
 
 class ActionAuditor:
-    def __init__(self, github_token: str, whitelist: str = '', blacklist: str = ''):
+    def __init__(self, github_token: str, whitelist: str = '', blacklist: str = '', allowlist: str = ''):
         self.github_token = github_token
         self.headers = {
             'Authorization': f'token {github_token}',
@@ -21,6 +21,7 @@ class ActionAuditor:
         self.issues = []
         self.whitelist = self._parse_list(whitelist)
         self.blacklist = self._parse_list(blacklist)
+        self.allowlist = self._parse_list(allowlist)
         
     def _parse_list(self, list_input: str) -> List[str]:
         """Parse list input which can be newline-separated or comma-separated string."""
@@ -66,6 +67,28 @@ class ActionAuditor:
                 return True
                 
         # If whitelist is specified but action is not in it, block it
+        return False
+    
+    def _is_action_trusted(self, action_path: str) -> bool:
+        """Check if an action is in the allowlist and should bypass security checks.
+        
+        Args:
+            action_path: The action path (e.g., 'actions/checkout', 'docker/build-push-action')
+            
+        Returns:
+            bool: True if action is trusted and should bypass checks, False otherwise
+        """
+        if not action_path or '/' not in action_path or not self.allowlist:
+            return False
+            
+        namespace = action_path.split('/')[0]
+        full_repo = action_path
+        
+        # Check if action or namespace is in allowlist
+        for allowlist_item in self.allowlist:
+            if allowlist_item == full_repo or allowlist_item == namespace:
+                return True
+                
         return False
         
     def find_workflow_files(self, workflows_dir: str) -> List[str]:
@@ -240,11 +263,12 @@ class ActionAuditor:
             # Check if action is allowed based on whitelist/blacklist
             is_action_allowed = self._is_action_allowed(action_path)
             
-            # Check if commit hash
-            is_pinned_to_hash = self.is_commit_hash(version)
+            # Check if action is trusted (bypasses security checks)
+            is_trusted = self._is_action_trusted(action_path)
             
-            # Check if verified publisher
-            is_verified = self.check_verified_publisher(owner, action_name)
+            # Initialize security check variables
+            is_pinned_to_hash = False
+            is_verified = False
             
             # Determine status
             status = "✅ PASS"
@@ -254,16 +278,28 @@ class ActionAuditor:
                 issues.append("Blocked by whitelist/blacklist rules")
                 status = "❌ FAIL"
                 exit_code = 1
-            
-            if not is_verified:
-                issues.append("Not from verified publisher")
-                status = "❌ FAIL"
-                exit_code = 1
-            
-            if not is_pinned_to_hash:
-                issues.append("Not pinned to commit hash")
-                status = "❌ FAIL"
-                exit_code = 1
+            elif is_trusted:
+                # Trusted actions bypass security checks but we still record their properties
+                is_pinned_to_hash = self.is_commit_hash(version)
+                is_verified = self.check_verified_publisher(owner, action_name)
+                issues.append("Trusted - bypassing security checks")
+            else:
+                # Run security checks for non-trusted actions
+                # Check if commit hash
+                is_pinned_to_hash = self.is_commit_hash(version)
+                
+                # Check if verified publisher
+                is_verified = self.check_verified_publisher(owner, action_name)
+                
+                if not is_verified:
+                    issues.append("Not from verified publisher")
+                    status = "❌ FAIL"
+                    exit_code = 1
+                
+                if not is_pinned_to_hash:
+                    issues.append("Not pinned to commit hash")
+                    status = "❌ FAIL"
+                    exit_code = 1
             
             
             # Strip the base path for cleaner output
@@ -384,8 +420,9 @@ def main():
     workflows_dir = os.environ.get('WORKFLOWS_DIR', '.github/workflows')
     whitelist = os.environ.get('WHITELIST', '')
     blacklist = os.environ.get('BLACKLIST', '')
+    allowlist = os.environ.get('ALLOWLIST', '')
     
-    auditor = ActionAuditor(github_token, whitelist, blacklist)
+    auditor = ActionAuditor(github_token, whitelist, blacklist, allowlist)
     report, exit_code = auditor.run_audit(workflows_dir)
     
     print(report)

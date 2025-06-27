@@ -21,6 +21,10 @@ inputs:
     description: 'List of blocked namespaces or repositories. Can be comma-separated or newline-separated. Blacklist takes precedence over whitelist.'
     required: false
     default: ''
+  allowlist:
+    description: 'List of trusted namespaces or repositories that bypass security checks. Can be comma-separated or newline-separated.'
+    required: false
+    default: ''
 outputs:
   report:
     description: 'Security audit report in Markdown format'
@@ -58,3 +62,4 @@ runs:
         WORKFLOWS_DIR: ${{ inputs.workflows_dir }}
         WHITELIST: ${{ inputs.whitelist }}
         BLACKLIST: ${{ inputs.blacklist }}
+        ALLOWLIST: ${{ inputs.allowlist }}

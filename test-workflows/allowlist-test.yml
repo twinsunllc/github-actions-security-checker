@@ -1,0 +1,8 @@
+name: Allowlist Test
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # Should bypass checks when allowlisted
+      - uses: some-vendor/action@v1  # Should fail security checks when not allowlisted
