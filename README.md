@@ -40,8 +40,8 @@ jobs:
 |-------|-------------|----------|---------|
 | `github_token` | GitHub token for API access | Yes | `${{ github.token }}` |
 | `workflows_dir` | Directory containing workflow files | No | `.github/workflows` |
-| `whitelist` | Array of allowed namespaces or repositories | No | `[]` |
-| `blacklist` | Array of blocked namespaces or repositories | No | `[]` |
+| `whitelist` | List of allowed namespaces or repositories | No | `''` |
+| `blacklist` | List of blocked namespaces or repositories | No | `''` |
 
 ## 📤 Outputs
 
@@ -104,23 +104,9 @@ Catches common typos that could be exploited:
 
 ### Whitelist/Blacklist Configuration
 
-Control which actions are allowed or blocked using whitelist and blacklist arrays. Multiple formats are supported:
+Control which actions are allowed or blocked using whitelist and blacklist lists. Two formats are supported:
 
-#### YAML Array Format (Recommended)
-```yaml
-- uses: twinsunllc/github-actions-security-checker@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    whitelist:
-      - actions          # Allow all actions/* 
-      - docker          # Allow all docker/*
-      - hashicorp/setup-terraform  # Allow specific action
-    blacklist:
-      - suspicious      # Block all suspicious/*
-      - untrusted/repo  # Block specific action
-```
-
-#### Multiline String Format
+#### Multiline Format (Recommended)
 ```yaml
 - uses: twinsunllc/github-actions-security-checker@v1
   with:
@@ -134,13 +120,13 @@ Control which actions are allowed or blocked using whitelist and blacklist array
       untrusted/repo
 ```
 
-#### JSON Array Format
+#### Comma-Separated Format
 ```yaml
 - uses: twinsunllc/github-actions-security-checker@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
-    whitelist: '["actions", "docker", "hashicorp/setup-terraform"]'
-    blacklist: '["suspicious", "untrusted/repo"]'
+    whitelist: "actions, docker, hashicorp/setup-terraform"
+    blacklist: "suspicious, untrusted/repo"
 ```
 
 **Important Rules:**

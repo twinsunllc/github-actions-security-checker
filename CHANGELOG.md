@@ -8,31 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.0] - 2025-06-27
 
 ### Added
-- **Whitelist/Blacklist Support**: Added comprehensive support for allowing and blocking specific actions and namespaces
-  - Supports YAML array format: `whitelist: [- actions, - docker]`
-  - Supports multiline string format: `whitelist: |` with newline-separated items
-  - Supports JSON array format: `whitelist: '["actions", "docker"]'`
-  - Supports comma-separated format for backward compatibility
+- **Whitelist/Blacklist Support**: Added support for allowing and blocking specific actions and namespaces
+  - Supports multiline format: `whitelist: |` with newline-separated items
+  - Supports comma-separated format: `whitelist: "actions, docker"`
   - Blacklist takes precedence over whitelist rules
   - Namespace matching (e.g., `docker` blocks all `docker/*` actions)
   - Specific repository matching (e.g., `docker/build-push-action`)
 - **Enhanced Reporting**: Added "Allowed by Rules" status to audit reports
 - **Comprehensive Testing**: Added 5 new test jobs to validate whitelist/blacklist functionality
-  - YAML array format testing
+  - Comma-separated format testing
   - Multiline string format testing  
   - Blacklist precedence verification
   - Blacklist-only mode testing
   - Mixed whitelist/blacklist scenarios
 
 ### Changed
-- Updated `action.yml` inputs to accept array formats for `whitelist` and `blacklist` parameters
-- Enhanced `_parse_list()` method to handle multiple input formats automatically
+- Updated `action.yml` inputs to accept list formats for `whitelist` and `blacklist` parameters
+- Added `_parse_list()` method to handle comma-separated and newline-separated formats
 - Updated audit logic to respect whitelist/blacklist rules during security checks
 - Improved debug output to show active whitelist/blacklist configuration
 
 ### Technical Details
 - Added `_is_action_allowed()` method to implement whitelist/blacklist logic
-- Enhanced environment variable parsing for array inputs
+- Simple and reliable parsing for two intuitive input formats
 - Updated report generation to include whitelist/blacklist status
 - Maintains full backward compatibility with existing configurations
 

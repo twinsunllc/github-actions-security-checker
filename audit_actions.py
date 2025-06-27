@@ -23,40 +23,17 @@ class ActionAuditor:
         self.blacklist = self._parse_list(blacklist)
         
     def _parse_list(self, list_input: str) -> List[str]:
-        """Parse list input which can be JSON array, YAML array, multiline string, space-separated, or comma-separated string."""
+        """Parse list input which can be newline-separated or comma-separated string."""
         if not list_input or not list_input.strip():
             return []
         
         list_input = list_input.strip()
         
-        # Try to parse as JSON array first
-        if list_input.startswith('[') and list_input.endswith(']'):
-            try:
-                parsed = json.loads(list_input)
-                if isinstance(parsed, list):
-                    return [str(item).strip() for item in parsed if str(item).strip()]
-            except json.JSONDecodeError:
-                pass
-        
-        # Handle Python list string representation (e.g., "['item1', 'item2']")
-        if list_input.startswith("['") and list_input.endswith("']"):
-            try:
-                # Use eval safely for simple list strings
-                parsed = eval(list_input)
-                if isinstance(parsed, list):
-                    return [str(item).strip() for item in parsed if str(item).strip()]
-            except (SyntaxError, NameError, ValueError):
-                pass
-        
-        # Handle multiline string (each line is an item) - GitHub Actions YAML array format
+        # Handle newline-separated format (multiline string)
         if '\n' in list_input:
             return [line.strip() for line in list_input.split('\n') if line.strip()]
         
-        # Handle space-separated strings (another possible GitHub Actions format)
-        if ' ' in list_input and ',' not in list_input:
-            return [item.strip() for item in list_input.split(' ') if item.strip()]
-        
-        # Fall back to comma-separated string for backward compatibility
+        # Handle comma-separated format
         return [item.strip() for item in list_input.split(',') if item.strip()]
     
     def _is_action_allowed(self, action_path: str) -> bool:

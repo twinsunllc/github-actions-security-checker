@@ -14,13 +14,13 @@ inputs:
     required: false
     default: '.github/workflows'
   whitelist:
-    description: 'Array of allowed namespaces or repositories. Supports YAML arrays, JSON arrays, or multiline strings.'
+    description: 'List of allowed namespaces or repositories. Can be comma-separated or newline-separated.'
     required: false
-    default: '[]'
+    default: ''
   blacklist:
-    description: 'Array of blocked namespaces or repositories. Supports YAML arrays, JSON arrays, or multiline strings. Blacklist takes precedence over whitelist.'
+    description: 'List of blocked namespaces or repositories. Can be comma-separated or newline-separated. Blacklist takes precedence over whitelist.'
     required: false
-    default: '[]'
+    default: ''
 outputs:
   report:
     description: 'Security audit report in Markdown format'
