@@ -22,7 +22,7 @@ inputs:
     required: false
     default: ''
   allowlist:
-    description: 'List of trusted namespaces or repositories that bypass security checks. Can be comma-separated or newline-separated.'
+    description: 'List of trusted namespaces or repositories that bypass verified publisher checks but still require commit hash pinning. Can be comma-separated or newline-separated.'
     required: false
     default: ''
 outputs:

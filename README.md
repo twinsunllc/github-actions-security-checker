@@ -42,6 +42,7 @@ jobs:
 | `workflows_dir` | Directory containing workflow files | No | `.github/workflows` |
 | `whitelist` | List of allowed namespaces or repositories | No | `''` |
 | `blacklist` | List of blocked namespaces or repositories | No | `''` |
+| `allowlist` | List of trusted namespaces that bypass publisher verification but still require commit hash pinning | No | `''` |
 
 ## 📤 Outputs
 
@@ -102,9 +103,13 @@ Catches common typos that could be exploited:
 
 ## 🏗️ Advanced Usage
 
-### Whitelist/Blacklist Configuration
+### Whitelist/Blacklist/Allowlist Configuration
 
-Control which actions are allowed or blocked using whitelist and blacklist lists. Two formats are supported:
+Control which actions are processed and how they're validated:
+
+- **Whitelist**: Only specified actions are processed (restrictive filtering)
+- **Blacklist**: Specified actions are blocked entirely  
+- **Allowlist**: Trusted actions bypass publisher verification but still require commit hash pinning
 
 #### Multiline Format (Recommended)
 ```yaml
@@ -118,6 +123,9 @@ Control which actions are allowed or blocked using whitelist and blacklist lists
     blacklist: |
       suspicious
       untrusted/repo
+    allowlist: |
+      actions
+      docker
 ```
 
 #### Comma-Separated Format
@@ -127,12 +135,31 @@ Control which actions are allowed or blocked using whitelist and blacklist lists
     github_token: ${{ secrets.GITHUB_TOKEN }}
     whitelist: "actions, docker, hashicorp/setup-terraform"
     blacklist: "suspicious, untrusted/repo"
+    allowlist: "actions, docker"
 ```
 
 **Important Rules:**
 - **Blacklist takes precedence**: If an action is in both whitelist and blacklist, it will be blocked
 - **No whitelist = allow all**: If no whitelist is specified, all non-blacklisted actions are allowed
-- **Namespace vs specific**: `docker` blocks/allows all `docker/*` actions, while `docker/build-push-action` targets only that specific action
+- **Allowlist provides security convenience**: Trust certain publishers while maintaining commit hash protection
+- **Namespace vs specific**: `docker` affects all `docker/*` actions, while `docker/build-push-action` targets only that specific action
+
+#### Allowlist Use Cases
+
+**Scenario 1: Trust GitHub's official actions**
+```yaml
+allowlist: "actions"
+# actions/checkout@v4 → ❌ FAIL (not pinned)
+# actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 → ✅ PASS (trusted + pinned)
+```
+
+**Scenario 2: Trust multiple publishers**
+```yaml
+allowlist: |
+  actions
+  docker
+  hashicorp
+```
 
 ### Custom Workflows Directory
 

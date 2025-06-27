@@ -279,10 +279,16 @@ class ActionAuditor:
                 status = "❌ FAIL"
                 exit_code = 1
             elif is_trusted:
-                # Trusted actions bypass security checks but we still record their properties
+                # Trusted actions bypass verified publisher check but still require commit hash pinning
                 is_pinned_to_hash = self.is_commit_hash(version)
-                is_verified = self.check_verified_publisher(owner, action_name)
-                issues.append("Trusted - bypassing security checks")
+                is_verified = True  # Bypass verified publisher check for trusted actions
+                
+                if not is_pinned_to_hash:
+                    issues.append("Not pinned to commit hash")
+                    status = "❌ FAIL"
+                    exit_code = 1
+                else:
+                    issues.append("Trusted - bypassing publisher verification")
             else:
                 # Run security checks for non-trusted actions
                 # Check if commit hash

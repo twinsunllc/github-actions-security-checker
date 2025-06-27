@@ -4,5 +4,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4  # Should bypass checks when allowlisted
-      - uses: some-vendor/action@v1  # Should fail security checks when not allowlisted
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # Should bypass publisher check but still require pinning (PASS)
+      - uses: actions/setup-node@v4  # Allowlisted but not pinned (FAIL)
+      - uses: some-vendor/action@abc123def456789012345678901234567890123456  # Not allowlisted, should fail publisher check (FAIL)

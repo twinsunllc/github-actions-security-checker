@@ -269,16 +269,22 @@ jobs:
           echo "📋 Audit Report:"
           cat action-security-report.md
           
-          # Verify actions/checkout shows "Trusted - bypassing security checks"
-          if ! grep -A10 "actions/checkout" action-security-report.md | grep -q "Trusted - bypassing security checks"; then
-            echo "❌ Expected actions/checkout to show 'Trusted - bypassing security checks'"
+          # Verify actions/checkout (pinned + allowlisted) passes with bypass message
+          if ! grep -A10 "actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11" action-security-report.md | grep -q "Trusted - bypassing publisher verification"; then
+            echo "❌ Expected pinned allowlisted action to show 'Trusted - bypassing publisher verification'"
             exit 1
           fi
           
-          # Verify non-allowlisted actions still get security checks
+          # Verify actions/setup-node (allowlisted but not pinned) fails
+          if ! grep -A10 "actions/setup-node@v4" action-security-report.md | grep -q "Not pinned to commit hash"; then
+            echo "❌ Expected unpinned allowlisted action to fail with pinning error"
+            exit 1
+          fi
+          
+          # Verify some-vendor/action (not allowlisted) fails publisher check
           if ! grep -A10 "some-vendor/action" action-security-report.md | grep -q "Not from verified publisher"; then
-            echo "❌ Expected some-vendor/action to fail security checks"
+            echo "❌ Expected non-allowlisted action to fail publisher check"
             exit 1
           fi
           
-          echo "✅ Allowlist bypass logic working correctly"
+          echo "✅ Allowlist logic working correctly (bypasses publisher check, enforces pinning)"
