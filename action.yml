@@ -51,12 +51,8 @@ runs:
       run: |
         set -e
         
-        # Copy the audit script to the working directory
-        cp ${{ github.action_path }}/audit_actions.py ./audit_actions.py
-        
-        # Make script executable and run it
-        chmod +x audit_actions.py
-        python3 audit_actions.py
+        # Run the audit script directly from the action path
+        python3 ${{ github.action_path }}/audit_actions.py
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         WORKFLOWS_DIR: ${{ inputs.workflows_dir }}
