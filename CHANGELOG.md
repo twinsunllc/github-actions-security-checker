@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-06-27
+
+### Added
+- **Allowlist Support**: Added `allowlist` input parameter for trusted actions that bypass verified publisher checks while still enforcing commit hash pinning
+  - Provides security convenience for trusted publishers (e.g., `actions`, `docker`)
+  - Maintains protection against tag mutation attacks by requiring commit hash pinning
+  - Supports both namespace (`actions`) and repository-level (`actions/checkout`) matching
+  - Uses same input formats as whitelist/blacklist (comma-separated or multiline)
+- **Enhanced Security Model**: Three-tier action control system:
+  - **Whitelist**: Restrictive filtering (only specified actions processed)
+  - **Blacklist**: Complete blocking of specified actions
+  - **Allowlist**: Trusted publisher bypass with hash pinning enforcement
+- **Comprehensive Test Coverage**: Added dedicated allowlist test workflow with isolation
+
+### Changed
+- **BREAKING CHANGE**: Allowlist security model refined to only bypass publisher verification, not commit hash requirements
+- Updated action description and README documentation with allowlist use cases
+- Modified audit report messages: "Trusted - bypassing publisher verification" instead of "bypassing security checks"
+- Enhanced README with security explanations and practical allowlist scenarios
+
+### Fixed
+- Isolated allowlist test to prevent interference from other workflow files
+- Added proper `continue-on-error` handling for tests expecting audit failures
+- Fixed test expectations to match new allowlist security behavior
+
+### Technical Details
+- Added `_is_action_trusted()` method to identify allowlisted actions
+- Updated audit flow to handle three-way logic: blocked, trusted, or normal validation
+- Maintains backward compatibility with existing whitelist/blacklist functionality
+- Comprehensive documentation updates explaining security benefits
+
+This release significantly improves the security posture by providing a trusted publisher mechanism that maintains protection against tag mutation attacks while reducing verification friction for known-good publishers.
+
 ## [1.3.0] - 2025-06-27
 
 ### Added
