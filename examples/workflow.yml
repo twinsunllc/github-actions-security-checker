@@ -1,0 +1,72 @@
+name: Security Audit Example
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly on Mondays
+  workflow_dispatch:
+
+jobs:
+  audit-actions:
+    name: Audit GitHub Actions
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      actions: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      
+      - name: Run GitHub Actions Security Checker
+        id: security-check
+        uses: twinsunllc/github-actions-security-checker@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload audit report
+        uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392  # v4.0.0
+        if: always()
+        with:
+          name: security-audit-report
+          path: action-security-report.md
+          retention-days: 30
+      
+      - name: Post summary
+        if: always()
+        run: |
+          echo "## 🛡️ Security Audit Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.security-check.outputs.passed }}" == "true" ]; then
+            echo "✅ All security checks passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Security issues detected! Check the artifact for details." >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Exit code: ${{ steps.security-check.outputs.exit_code }}" >> $GITHUB_STEP_SUMMARY
+      
+      # Optional: Create an issue if security problems are found
+      - name: Create issue for security findings
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # v7.0.1
+        with:
+          script: |
+            const title = '🚨 GitHub Actions Security Audit Failed';
+            const body = `The weekly security audit has detected issues in our GitHub Actions.
+            
+            Please review the [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) and download the security report artifact for details.
+            
+            This issue was automatically created by the security audit workflow.`;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['security', 'github-actions']
+            });

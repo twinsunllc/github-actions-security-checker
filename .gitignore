@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Action specific
+action-security-report.md
+audit_actions.py
