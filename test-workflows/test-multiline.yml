@@ -4,6 +4,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: azure/login@v1
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      - uses: azure/login@cb79c77b0977ce3d24d11df6d5d4d3c85c613259  # v1.6.1
       - uses: untrusted/action@v1
