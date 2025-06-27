@@ -84,15 +84,8 @@ jobs:
       - name: Create custom workflows directory
         run: |
           mkdir -p custom/workflows
-          cat > custom/workflows/test.yml << 'EOF'
-          name: Custom Workflow
-          on: push
-          jobs:
-            test:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
-          EOF
+          # Copy the actual action.yml file into the custom directory
+          cp action.yml custom/workflows/action.yml
       
       - name: Run Security Audit
         id: audit
