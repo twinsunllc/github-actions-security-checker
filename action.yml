@@ -120,43 +120,88 @@ runs:
                 """Check if version is a commit hash (40-character hex string)."""
                 return bool(re.match(r'^[a-f0-9]{40}$', version))
             
-            def check_verified_publisher(self, owner: str) -> bool:
-                """Check if the action owner is a verified publisher."""
+            def check_verified_publisher(self, owner: str, action_name: str = None) -> bool:
+                """Check if the action owner is a verified publisher by fetching marketplace page."""
                 if owner in self.verified_publishers:
                     return True
                 
-                try:
-                    # Check GitHub Marketplace
-                    url = f'https://api.github.com/users/{owner}'
-                    response = requests.get(url, headers=self.headers, timeout=10)
-                    
-                    if response.status_code == 200:
-                        user_data = response.json()
-                        # Check if user/organization is verified
-                        # Note: GitHub doesn't expose verification status via API for security reasons
-                        # We'll use a known list of verified publishers
-                        verified_orgs = {
-                            'actions', 'github', 'microsoft', 'azure', 'aws-actions', 
-                            'docker', 'google-github-actions', 'hashicorp', 'codecov',
-                            'sonarqube-quality-gate-action', 'crazy-max', 'peter-evans',
-                            'JamesIves', 'peaceiris', 'stefanzweifel', 'EndBug'
-                        }
+                # Try multiple marketplace URL patterns
+                urls_to_try = []
+                
+                if action_name:
+                    # Try action name first
+                    urls_to_try.append(f'https://github.com/marketplace/actions/{action_name}')
+                    # Try with owner prefix
+                    urls_to_try.append(f'https://github.com/marketplace/actions/{owner}-{action_name}')
+                
+                # Try owner name
+                urls_to_try.append(f'https://github.com/marketplace/actions/{owner}')
+                
+                for marketplace_url in urls_to_try:
+                    try:
+                        # Fetch marketplace page
+                        response = requests.get(marketplace_url, timeout=15)
                         
-                        is_verified = owner.lower() in verified_orgs
-                        
-                        # Also check if it's a GitHub-owned organization
-                        if user_data.get('company') == 'GitHub' or user_data.get('login') in ['github', 'actions']:
-                            is_verified = True
-                        
-                        self.verified_publishers.add(owner)
-                        return is_verified
-                    else:
-                        print(f"Warning: Could not fetch data for {owner}: HTTP {response.status_code}")
-                        return False
-                        
-                except Exception as e:
-                    print(f"Warning: Error checking {owner}: {e}")
+                        if response.status_code == 200:
+                            page_content = response.text
+                            
+                            # Check for verification elements
+                            is_verified = self._check_verification_elements(page_content, owner)
+                            
+                            # Cache the result
+                            if is_verified:
+                                self.verified_publishers.add(owner)
+                            
+                            return is_verified
+                        elif response.status_code == 404:
+                            # Try next URL pattern
+                            continue
+                        else:
+                            print(f"Warning: Could not fetch marketplace page {marketplace_url}: HTTP {response.status_code}")
+                            
+                    except Exception as e:
+                        print(f"Warning: Error checking marketplace {marketplace_url}: {e}")
+                        continue
+                
+                return False
+            
+            def _check_verification_elements(self, page_content: str, owner: str) -> bool:
+                """Check for verification elements in the marketplace page content."""
+                # Check for "Verified" text
+                if 'Verified' not in page_content:
                     return False
+                
+                # Check for the specific verification text
+                verification_text = "GitHub has manually verified the creator of the action as an official partner organization."
+                if verification_text not in page_content:
+                    return False
+                
+                # Check for organization link in the about section
+                # Look for various formats of GitHub links (case-insensitive)
+                owner_variants = [owner, owner.lower(), owner.upper(), owner.capitalize()]
+                
+                link_found = False
+                for owner_variant in owner_variants:
+                    org_link_patterns = [
+                        f'https://github.com/{owner_variant}',
+                        f'/{owner_variant}',  # Relative link format
+                        f'href="/{owner_variant}"',  # HTML href format
+                        f'[{owner_variant}](/{owner_variant})',  # Markdown link format
+                        f'github.com/{owner_variant}',  # Without protocol
+                    ]
+                    
+                    for pattern in org_link_patterns:
+                        if pattern in page_content:
+                            link_found = True
+                            break
+                    
+                    if link_found:
+                        break
+                
+                if not link_found:
+                    return False
+                
+                return True
             
             def audit_actions(self) -> Tuple[List[Dict], int]:
                 """Audit all found actions."""
@@ -179,12 +224,13 @@ runs:
                         continue
                         
                     owner = action_path.split('/')[0]
+                    action_name = action_path.split('/')[1] if '/' in action_path else None
                     
                     # Check if commit hash
                     is_pinned_to_hash = self.is_commit_hash(version)
                     
                     # Check if verified publisher
-                    is_verified = self.check_verified_publisher(owner)
+                    is_verified = self.check_verified_publisher(owner, action_name)
                     
                     # Determine status
                     status = "✅ PASS"
