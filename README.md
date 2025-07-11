@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Run GitHub Actions Security Checker
-        uses: twinsunllc/github-actions-security-checker@v1
+        uses: twinsunllc/github-actions-security-checker@3431967fb16dd3d0e96fcf823ba33609c2df31ee # v1.4.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -164,7 +164,7 @@ allowlist: |
 ### Custom Workflows Directory
 
 ```yaml
-- uses: twinsunllc/github-actions-security-checker@v1
+- uses: twinsunllc/github-actions-security-checker@3431967fb16dd3d0e96fcf823ba33609c2df31ee # v1.4.1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     workflows_dir: '.github/custom-workflows'
@@ -173,12 +173,12 @@ allowlist: |
 ### Upload Report as Artifact
 
 ```yaml
-- uses: twinsunllc/github-actions-security-checker@v1
+- uses: twinsunllc/github-actions-security-checker@3431967fb16dd3d0e96fcf823ba33609c2df31ee # v1.4.1
   id: security-audit
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
 
-- uses: actions/upload-artifact@v4
+- uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
   if: always()
   with:
     name: security-report
@@ -188,7 +188,7 @@ allowlist: |
 ### Conditional Failure
 
 ```yaml
-- uses: twinsunllc/github-actions-security-checker@v1
+- uses: twinsunllc/github-actions-security-checker@3431967fb16dd3d0e96fcf823ba33609c2df31ee # v1.4.1
   id: security-audit
   continue-on-error: true
   with:
