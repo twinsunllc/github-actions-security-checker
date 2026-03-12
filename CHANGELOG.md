@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] - 2026-03-11
+
+### Fixed
+- **`actions` namespace always verified**: GitHub's own `actions` publisher is now unconditionally trusted, eliminating spurious "Not from verified publisher" failures for first-party actions
+- **Publisher verification retry logic**: HTTP requests to GitHub and the Marketplace now retry up to 3 times (with 2s and 4s delays) before reporting a failure, preventing intermittent network errors from causing false negatives
+- **Publisher result caching**: Both verified and non-verified publisher determinations are now cached for the duration of a run, so the same owner is never checked more than once
+
 ## [1.4.1] - 2025-06-27
 
 ### Changed

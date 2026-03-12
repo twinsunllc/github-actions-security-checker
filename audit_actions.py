@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import json
+import time
 import yaml
 import requests
 from pathlib import Path
@@ -17,6 +18,7 @@ class ActionAuditor:
             'User-Agent': 'GitHub-Action-Security-Auditor/1.0'
         }
         self.verified_publishers = set()
+        self.publisher_cache = {}  # Maps owner -> bool (caches both verified and non-verified)
         self.action_references = []
         self.issues = []
         self.whitelist = self._parse_list(whitelist)
@@ -146,58 +148,71 @@ class ActionAuditor:
     
     def check_verified_publisher(self, owner: str, action_name: str = None) -> bool:
         """Check if the action owner is a verified publisher by fetching repo page and finding marketplace link."""
-        if owner in self.verified_publishers:
+        # GitHub's own 'actions' namespace is always verified
+        if owner == 'actions':
             return True
-        
-        # First, fetch the repository page to find the marketplace link
+
+        # Return cached result (covers both verified and non-verified outcomes)
+        if owner in self.publisher_cache:
+            return self.publisher_cache[owner]
+
         repo_url = f'https://github.com/{owner}/{action_name}' if action_name else f'https://github.com/{owner}'
-        
-        try:
-            # Fetch repository page
-            response = requests.get(repo_url, timeout=15)
-            
-            if response.status_code != 200:
-                print(f"Warning: Could not fetch repository page {repo_url}: HTTP {response.status_code}")
-                return False
-            
-            repo_content = response.text
-            
-            # Look for "View on Marketplace" link
-            marketplace_link_pattern = r'href="(https://github\.com/marketplace/actions/[^"]+)"'
-            match = re.search(marketplace_link_pattern, repo_content)
-            
-            if not match:
-                # Try alternative pattern for marketplace links
-                marketplace_link_pattern = r'href="(/marketplace/actions/[^"]+)"'
-                match = re.search(marketplace_link_pattern, repo_content)
-                if match:
-                    marketplace_url = f"https://github.com{match.group(1)}"
-                else:
+
+        max_attempts = 3
+        retry_delays = [2, 4]  # seconds between attempts
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = requests.get(repo_url, timeout=15)
+
+                if response.status_code != 200:
+                    print(f"Warning: Could not fetch repository page {repo_url}: HTTP {response.status_code} (attempt {attempt}/{max_attempts})")
+                    if attempt < max_attempts:
+                        time.sleep(retry_delays[attempt - 1])
+                        continue
+                    self.publisher_cache[owner] = False
                     return False
-            else:
-                marketplace_url = match.group(1)
-            
-            # Now fetch the marketplace page
-            marketplace_response = requests.get(marketplace_url, timeout=15)
-            
-            if marketplace_response.status_code == 200:
-                marketplace_content = marketplace_response.text
-                
-                # Check for verification elements
-                is_verified = self._check_verification_elements(marketplace_content, owner)
-                
-                # Cache the result
+
+                repo_content = response.text
+
+                # Look for "View on Marketplace" link
+                marketplace_link_pattern = r'href="(https://github\.com/marketplace/actions/[^"]+)"'
+                match = re.search(marketplace_link_pattern, repo_content)
+
+                if not match:
+                    marketplace_link_pattern = r'href="(/marketplace/actions/[^"]+)"'
+                    match = re.search(marketplace_link_pattern, repo_content)
+                    if match:
+                        marketplace_url = f"https://github.com{match.group(1)}"
+                    else:
+                        self.publisher_cache[owner] = False
+                        return False
+                else:
+                    marketplace_url = match.group(1)
+
+                marketplace_response = requests.get(marketplace_url, timeout=15)
+
+                if marketplace_response.status_code != 200:
+                    print(f"Warning: Could not fetch marketplace page {marketplace_url}: HTTP {marketplace_response.status_code} (attempt {attempt}/{max_attempts})")
+                    if attempt < max_attempts:
+                        time.sleep(retry_delays[attempt - 1])
+                        continue
+                    self.publisher_cache[owner] = False
+                    return False
+
+                is_verified = self._check_verification_elements(marketplace_response.text, owner)
+                self.publisher_cache[owner] = is_verified
                 if is_verified:
                     self.verified_publishers.add(owner)
-                
                 return is_verified
-            else:
-                print(f"Warning: Could not fetch marketplace page {marketplace_url}: HTTP {marketplace_response.status_code}")
-                return False
-                
-        except Exception as e:
-            print(f"Warning: Error checking verification for {owner}/{action_name}: {e}")
-            return False
+
+            except Exception as e:
+                print(f"Warning: Error checking verification for {owner}/{action_name}: {e} (attempt {attempt}/{max_attempts})")
+                if attempt < max_attempts:
+                    time.sleep(retry_delays[attempt - 1])
+
+        self.publisher_cache[owner] = False
+        return False
     
     def _check_verification_elements(self, page_content: str, owner: str) -> bool:
         """Check for verification elements in the marketplace page content."""
