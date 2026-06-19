@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.4.3] - 2026-06-18
 
 ### Fixed
 - **`github` namespace always verified**: GitHub's own `github/*` org (e.g. `github/codeql-action`) is now unconditionally trusted, matching the existing treatment of `actions/*` and the verified-publisher list already documented in the README. GitHub does not apply the third-party "partner organization" badge to its own first-party org, so the Marketplace scrape could not confirm it, producing spurious "Not from verified publisher" failures for first-party actions like CodeQL.
