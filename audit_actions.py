@@ -148,8 +148,11 @@ class ActionAuditor:
     
     def check_verified_publisher(self, owner: str, action_name: str = None) -> bool:
         """Check if the action owner is a verified publisher by fetching repo page and finding marketplace link."""
-        # GitHub's own 'actions' namespace is always verified
-        if owner == 'actions':
+        # GitHub's own first-party namespaces are always verified. GitHub
+        # does not badge its own org as a third-party "partner organization"
+        # on the Marketplace, so the scrape-based check below cannot confirm
+        # them. Both are already documented as verified publishers in README.
+        if owner in ('actions', 'github'):
             return True
 
         # Return cached result (covers both verified and non-verified outcomes)
