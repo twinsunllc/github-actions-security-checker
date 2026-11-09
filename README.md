@@ -55,10 +55,31 @@ jobs:
 ## 📋 Security Checks
 
 ### 1. Verified Publisher Check
-The action maintains a list of verified publishers including:
-- Official GitHub actions (`actions/*`, `github/*`)
-- Major cloud providers (`aws-actions/*`, `azure/*`, `google-github-actions/*`)
-- Popular community actions from verified maintainers
+GitHub's own namespaces (`actions/*`, `github/*`) are always verified. For any other owner, the checker
+loads the action's repository page on github.com, follows its "View on Marketplace" link, and looks for
+the Marketplace "verified creator" badge. Each action it checks (one not allowlisted or blocked) gets one of three outcomes:
+
+| Outcome | When | Result |
+|---------|------|--------|
+| ✅ verified | The Marketplace page loaded and shows the badge | Pass |
+| ❌ `Not from verified publisher` | A page loaded and shows no badge, the repository has no Marketplace listing, or the repository page is a 404 | Fail: a security finding |
+| ⚠️ `could not verify (<HTTP status or error>)` | github.com could not be fetched: a 5xx, a 429, a timeout or a connection error, still failing after the retries; or another 4xx | Fail, counted separately as **Could not verify**. It is a GitHub fetch failure, not a security finding, and is also raised as a `::error` annotation saying so |
+
+A 5xx, a 429, a timeout or a connection error is retried with backoff (5, 10, 20, 40 and 60 seconds:
+135 seconds over six attempts) for each page before the check gives up. Only real verdicts are
+cached for the rest of the run; after a fetch failure, the next action of the same owner is fetched again.
+
+#### Snapshot fallback (`verified-publishers.json`)
+The checker ships `verified-publishers.json`: the owners the live check verified when the release was
+cut, each with its `verified_at` date. It is read **only** when the live check could not run:
+
+- An owner listed there with a `verified_at` within the last 90 days passes, reported as
+  `verified (from the snapshot of <date>; live check could not run: <error>)`.
+- An owner that is not listed, or whose entry is older than 90 days, stays `could not verify`.
+- The file is never consulted when a page loaded. A live "no badge" fails even for an owner in the snapshot.
+- It holds positive entries only. Nothing ever records an owner as unverified.
+
+Because you pin the checker by sha, the snapshot you get is the one in the release you pinned.
 
 ### 2. Commit Hash Pinning
 Ensures actions use full 40-character commit SHAs instead of tags:
@@ -78,6 +99,7 @@ Catches common typos that could be exploited:
 
 **Total actions audited:** 5
 **Verified publishers:** 3/5
+**Could not verify:** 0
 **Commit hash pinned:** 2/5
 **Allowed by whitelist/blacklist:** 4/5
 **Failed checks:** 3
@@ -200,6 +222,29 @@ allowlist: |
     echo "::warning::Security issues found in GitHub Actions"
     cat action-security-report.md
 ```
+
+## 🧪 Development
+
+Run the unit tests (Python 3.9+, with `pyyaml` and `requests` installed):
+
+```bash
+python -m unittest discover -b -s tests -t .
+```
+
+## 📦 Releasing
+
+1. Refresh the snapshot from the live Marketplace check. With no arguments, the script re-checks every
+   owner already in the file through its recorded `checked_via` action; pass `owner/repo` arguments to
+   add owners:
+   ```bash
+   python scripts/refresh_verified_publishers.py
+   python scripts/refresh_verified_publishers.py docker/build-push-action   # add or re-check one owner
+   ```
+   An owner the live check verifies is written with today's date. An owner it finds unverified is
+   removed. When the live check cannot run, an existing entry is left as it is and the script says it
+   was not refreshed. No workflow runs this script or writes to the repository.
+2. Commit `verified-publishers.json` with the release's CHANGELOG entry.
+3. Tag the release (`vX.Y.Z`) on `main`.
 
 ## 🤝 Contributing
 
