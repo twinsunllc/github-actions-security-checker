@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-11-09
+
+### Fixed
+- **A GitHub fetch failure is no longer a security finding**: when github.com answers 5xx or 429, times out or refuses the connection, the publisher check retries with backoff (5, 10, 20, 40, 60 s: 135 s per page) and then reports `could not verify (<HTTP status or error>)` instead of "Not from verified publisher". The report counts it separately (`**Could not verify:** n`) and raises a `::error` annotation naming the fetch failure. The job still fails. Another 4xx is also `could not verify`, without retry; a 404 repository page is still "Not from verified publisher".
+- **Fetch failures are not cached**: `publisher_cache` stores only real verdicts, so after a failed fetch the next action of the same owner is fetched again instead of inheriting an "unverified" verdict.
+
+### Added
+- **Snapshot fallback**: `verified-publishers.json` lists owners verified at release, with `verified_at`. It is read only when the live check could not run; an owner verified within the last 90 days then passes as `verified (from the snapshot of <date>; live check could not run: <error>)`. Positive entries only; a live "no badge" always wins.
+- `scripts/refresh_verified_publishers.py`, run by a person at release to refresh the snapshot (see README, "Releasing").
+- A unit test suite (`tests/`, stdlib `unittest`) and a `unit-tests` CI job.
+
+### Changed
+- `ActionAuditor.check_verified_publisher()` returns a `PublisherResult` (`status`, `detail`, `source`, `url`, `snapshot_date`) instead of a bool. `ActionAuditor` takes optional `retry_delays`, `sleep`, `now` and `snapshot_path` arguments.
+
 ## [1.4.3] - 2026-06-18
 
 ### Fixed

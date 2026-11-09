@@ -1,0 +1,9 @@
+{
+  "description": "Positive entries only: owners the live Marketplace check verified at release. Read by audit_actions.py only when the live check could not run. Regenerate with scripts/refresh_verified_publishers.py.",
+  "publishers": {
+    "docker": {
+      "checked_via": "docker/build-push-action",
+      "verified_at": "2026-11-09"
+    }
+  }
+}

@@ -14,6 +14,9 @@ GitHub Actions Security Checker is a composite GitHub Action that audits workflo
 
 To test the security checker:
 ```bash
+# Unit tests (requests.get is mocked; nothing sleeps or touches the network)
+python -m unittest discover -b -s tests -t .
+
 # The action includes test workflows that intentionally contain security issues
 # Review test-workflows/insecure.yml for examples of what the checker catches
 
@@ -30,7 +33,12 @@ When modifying the action:
 2. The `action.yml` file references this script and copies it at runtime
 3. Key classes and methods in `audit_actions.py`:
    - `ActionAuditor`: Main class containing all security check logic
-   - `check_verified_publisher()`: Verifies actions against GitHub Marketplace
+   - `check_verified_publisher()`: Verifies actions against GitHub Marketplace. Returns a `PublisherResult`
+     whose `status` is `verified`, `unverified` or `could_not_verify` (a GitHub fetch failure, never a finding).
+     Only real verdicts go into `publisher_cache`. `verified-publishers.json` is read only after a
+     `could_not_verify`, via `_snapshot_fallback()`.
+   - `check_publisher_live()`: The live repo-page + Marketplace scrape, with `_fetch()` retrying 5xx/429/timeouts/connection errors
+     on `retry_delays` (injectable, with `sleep` and `now`, so tests never sleep)
    - `is_commit_hash()`: Validates SHA pinning
    - `generate_report()`: Creates Markdown output
 
@@ -45,7 +53,9 @@ When modifying the action:
 - **Modular Design**: Logic is separated into `audit_actions.py` for easier maintenance and testing
 - **No Build Process**: As a GitHub Action, it self-installs dependencies at runtime
 - **Regex-based Parsing**: Uses regex patterns to extract action references from YAML files
-- **Dynamic Verification**: Avoids maintaining static allow-lists by checking GitHub Marketplace in real-time
+- **Dynamic Verification**: Avoids maintaining static allow-lists by checking GitHub Marketplace in real-time.
+  The only static list is `verified-publishers.json`, a positive-only snapshot used when the live check cannot
+  run, refreshed at release by `scripts/refresh_verified_publishers.py`
 
 ## Key Implementation Details
 
