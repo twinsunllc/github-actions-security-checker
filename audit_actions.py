@@ -36,9 +36,14 @@ class PublisherResult(NamedTuple):
 
 def read_snapshot_file(path: Path) -> Dict:
     """Return the snapshot file's raw publishers map, or {} with a warning
-    when the file is missing or is not {"publishers": {...}} JSON."""
+    when the path is not a .json file, the file is missing, or it is not
+    {"publishers": {...}} JSON."""
+    resolved = Path(path).resolve()
+    if resolved.suffix != '.json':
+        print(f"Warning: refusing verified publisher snapshot {path}: not a .json file; no snapshot fallback")
+        return {}
     try:
-        with open(path, 'r') as f:
+        with open(resolved, 'r') as f:
             data = json.load(f)
     except FileNotFoundError:
         print(f"Warning: verified publisher snapshot not found at {path}; no snapshot fallback")

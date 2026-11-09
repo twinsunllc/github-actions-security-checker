@@ -73,6 +73,20 @@ class RefreshTest(unittest.TestCase):
         for entry in publishers.values():
             self.assertEqual(set(entry), {'verified_at', 'checked_via'})
 
+    def test_main_refuses_a_snapshot_path_that_is_not_an_existing_json_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            other = Path(tmp) / 'notes.txt'
+            other.write_text('keep me\n')
+            missing = Path(tmp) / 'missing.json'
+            for path in (other, missing, Path(tmp)):
+                with self.subTest(path=path.name), \
+                        mock.patch.object(refresh_script.ActionAuditor, 'check_publisher_live') as live, \
+                        mock.patch('sys.stdout'):
+                    self.assertEqual(refresh_script.main(['docker/build-push-action', '--snapshot', str(path)]), 2)
+                    live.assert_not_called()
+            self.assertEqual(other.read_text(), 'keep me\n')
+            self.assertFalse(missing.exists())
+
     def test_no_workflow_runs_the_refresh_script(self):
         workflows = Path(tests.helpers.REPO_ROOT, '.github', 'workflows')
         for wf in list(workflows.glob('*.yml')) + [Path(tests.helpers.REPO_ROOT, 'action.yml')]:

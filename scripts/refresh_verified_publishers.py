@@ -71,7 +71,12 @@ def main(argv: List[str] = None) -> int:
     parser.add_argument('--snapshot', default=str(DEFAULT_SNAPSHOT_PATH), help='snapshot file to rewrite')
     args = parser.parse_args(argv)
 
-    path = Path(args.snapshot)
+    # Rewrite only an existing .json file: a mistyped --snapshot must not create
+    # a new file or overwrite a non-JSON one.
+    path = Path(args.snapshot).resolve()
+    if path.suffix != '.json' or not path.is_file():
+        print(f'Refusing --snapshot {args.snapshot}: it must name an existing .json snapshot file')
+        return 2
     publishers = read_snapshot_file(path)
     actions = args.actions or [e['checked_via'] for e in publishers.values()
                                if isinstance(e, dict) and e.get('checked_via')]

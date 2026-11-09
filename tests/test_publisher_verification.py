@@ -231,6 +231,16 @@ class SnapshotTest(AuditorCase):
                 self.assertEqual(self.auditor().check_verified_publisher('docker', 'setup-buildx-action').status,
                                  COULD_NOT_VERIFY)
 
+    def test_a_snapshot_path_that_is_not_json_is_never_read(self):
+        other = Path(self.tmp.name) / 'verified-publishers.txt'
+        other.write_text(json.dumps({'publishers': {'docker': {'verified_at': TODAY.isoformat()}}}))
+        with mock.patch('sys.stdout'):
+            self.assertEqual(load_snapshot(other), {})
+        self.snapshot_path = other
+        self.route({REPO: [response(504)]})
+        self.assertEqual(self.auditor().check_verified_publisher('docker', 'setup-buildx-action').status,
+                         COULD_NOT_VERIFY)
+
     def test_malformed_or_negative_entries_are_ignored(self):
         self.write_snapshot({
             'docker': {'verified_at': TODAY.isoformat(), 'verified': False},

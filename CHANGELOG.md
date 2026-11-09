@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Snapshot fallback**: `verified-publishers.json` lists owners verified at release, with `verified_at`. It is read only when the live check could not run; an owner verified within the last 90 days then passes as `verified (from the snapshot of <date>; live check could not run: <error>)`. Positive entries only; a live "no badge" always wins.
-- `scripts/refresh_verified_publishers.py`, run by a person at release to refresh the snapshot (see README, "Releasing").
+- `scripts/refresh_verified_publishers.py`, run by a person at release to refresh the snapshot (see README, "Releasing"). It rewrites only an existing `.json` file and exits 2 for any other `--snapshot` path. The checker likewise reads the snapshot only from a `.json` path.
 - A unit test suite (`tests/`, stdlib `unittest`) and a `unit-tests` CI job.
 
 ### Changed
