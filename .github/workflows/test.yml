@@ -10,7 +10,7 @@ on:
 jobs:
   unit-tests:
     name: Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: [runs-on,runner=2cpu-linux-x64,image=ubuntu24-full-x64,"run-id=${{ github.run_id }}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
@@ -28,7 +28,7 @@ jobs:
 
   test-pass:
     name: Test with Secure Actions
-    runs-on: ubuntu-latest
+    runs-on: [runs-on,runner=2cpu-linux-x64,image=ubuntu24-full-x64,"run-id=${{ github.run_id }}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
@@ -52,7 +52,7 @@ jobs:
 
   test-fail:
     name: Test with Insecure Actions
-    runs-on: ubuntu-latest
+    runs-on: [runs-on,runner=2cpu-linux-x64,image=ubuntu24-full-x64,"run-id=${{ github.run_id }}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
@@ -84,7 +84,7 @@ jobs:
 
   test-custom-dir:
     name: Test Custom Directory
-    runs-on: ubuntu-latest
+    runs-on: [runs-on,runner=2cpu-linux-x64,image=ubuntu24-full-x64,"run-id=${{ github.run_id }}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
@@ -112,7 +112,7 @@ jobs:
 
   test-whitelist-comma:
     name: Test Comma-Separated Whitelist
-    runs-on: ubuntu-latest
+    runs-on: [runs-on,runner=2cpu-linux-x64,image=ubuntu24-full-x64,"run-id=${{ github.run_id }}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
@@ -152,7 +152,7 @@ jobs:
 
   test-whitelist-multiline:
     name: Test Multiline String Whitelist
-    runs-on: ubuntu-latest
+    runs-on: [runs-on,runner=2cpu-linux-x64,image=ubuntu24-full-x64,"run-id=${{ github.run_id }}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
@@ -190,7 +190,7 @@ jobs:
 
   test-blacklist-precedence:
     name: Test Blacklist Precedence
-    runs-on: ubuntu-latest
+    runs-on: [runs-on,runner=2cpu-linux-x64,image=ubuntu24-full-x64,"run-id=${{ github.run_id }}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
@@ -224,7 +224,7 @@ jobs:
 
   test-no-whitelist:
     name: Test Blacklist Only (No Whitelist)
-    runs-on: ubuntu-latest
+    runs-on: [runs-on,runner=2cpu-linux-x64,image=ubuntu24-full-x64,"run-id=${{ github.run_id }}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
@@ -263,7 +263,7 @@ jobs:
 
   test-allowlist:
     name: Test Allowlist (Bypass Security Checks)
-    runs-on: ubuntu-latest
+    runs-on: [runs-on,runner=2cpu-linux-x64,image=ubuntu24-full-x64,"run-id=${{ github.run_id }}"]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
