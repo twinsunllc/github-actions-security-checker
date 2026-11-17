@@ -225,7 +225,7 @@ allowlist: |
 
 ## 🧪 Development
 
-Run the unit tests (Python 3.9+, with `pyyaml` and `requests` installed):
+Run the unit tests (Python 3.10+, with `pyyaml` and `requests` installed):
 
 ```bash
 python -m unittest discover -b -s tests -t .
